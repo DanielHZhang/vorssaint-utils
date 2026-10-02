@@ -550,7 +550,7 @@ private enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
     // are migrated once without disturbing the rest of the user's layout.
     case screenshot, quickLauncher, appUpdates, cleaner, homebrew, media, clipboard, windowLayout,
          uninstaller, cleanURL, cleaning, screenOCR, colorPicker, cameraPreview, scratchpad,
-         commandBar, screenRecorder, portManager
+         commandBar, screenRecorder, portManager, closeNotifications
 
     var id: String { rawValue }
 
@@ -573,6 +573,7 @@ private enum UtilityPanelItem: String, PanelOrderItem, Identifiable {
         case .screenshot: return .screenshot
         case .screenRecorder: return .screenRecorder
         case .cameraPreview: return .cameraPreview
+        case .closeNotifications: return .closeNotifications
         case .scratchpad: return .scratchpad
         case .commandBar: return .commandBar
         case .portManager: return .portManager
@@ -608,6 +609,7 @@ struct UtilitiesSection: View {
     @AppStorage(DefaultsKey.panelUtilityQuickLauncher) private var showQuickLauncher = true
     @AppStorage(DefaultsKey.panelUtilityColorPicker) private var showColorPicker = true
     @AppStorage(DefaultsKey.panelUtilityCameraPreview) private var showCameraPreview = true
+    @AppStorage(DefaultsKey.panelUtilityCloseNotifications) private var showCloseNotifications = true
     @AppStorage(DefaultsKey.panelUtilityScratchpad) private var showScratchpad = true
     @AppStorage(DefaultsKey.panelUtilityCommandBar) private var showCommandBar = true
     @AppStorage(DefaultsKey.panelUtilityScreenRecorder) private var showScreenRecorder = true
@@ -770,6 +772,7 @@ struct UtilitiesSection: View {
         case .screenOCR: return showScreenOCR
         case .colorPicker: return showColorPicker
         case .cameraPreview: return showCameraPreview
+        case .closeNotifications: return showCloseNotifications
         case .scratchpad: return showScratchpad
         case .commandBar: return showCommandBar
         case .quickLauncher: return showQuickLauncher
@@ -968,6 +971,21 @@ struct UtilitiesSection: View {
                                     appDelegate()?.closePopover()
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                                         CameraPreviewService.shared.show()
+                                    }
+                                })
+        case .closeNotifications:
+            UtilityActionButton(title: FeatureStrings.closeNotifications(l10n.language).pageTitle,
+                                caption: FeatureStrings.closeNotifications(l10n.language).panelCaption,
+                                systemImage: "bell.slash",
+                                isEditing: editing,
+                                showsDragHandle: true,
+                                visibility: $showCloseNotifications,
+                                needsAttention: !permissions.accessibility,
+                                shortcutHint: shortcutHint(.closeNotifications),
+                                action: {
+                                    appDelegate()?.closePopover()
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                                        CloseNotificationsService.shared.closeAllNotifications()
                                     }
                                 })
         case .scratchpad:

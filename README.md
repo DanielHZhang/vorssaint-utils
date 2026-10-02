@@ -138,6 +138,7 @@ Reorder or hide panel sections, choose a compact layout, and export settings to 
 - **Quick toggles.** Switch appearance, hide desktop icons, eject disks, empty the Trash, lock the screen and more.
 - **Radial menu.** Open a customizable wheel of apps, files, shortcuts and tools around the pointer, with profiles and submenus.
 - **Scratchpad.** Keep autosaved notes in tabs, with Markdown preview and export, in a floating window or Dynamic Island.
+- **Close notifications.** Clear every notification in Notification Center with one shortcut, without opening it first.
 - **Cleaning Mode.** Lock keyboard input while cleaning, with a black screen or a small visible indicator.
 
 ### Capture and create

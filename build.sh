@@ -324,6 +324,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/RecorderStrings.swift
         Sources/Vorssaint/Core/RecorderShareStrings.swift
         Sources/Vorssaint/Core/CameraPreviewStrings.swift
+        Sources/Vorssaint/Core/CloseNotificationsStrings.swift
         Sources/Vorssaint/Core/WallpaperStrings.swift
         Sources/Vorssaint/Services/Wallpaper/WallpaperSupport.swift
         Sources/Vorssaint/Core/ScratchpadStrings.swift
@@ -468,6 +469,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/CommandBar/CommandBarQueryMemory.swift
         Sources/Vorssaint/Services/SpotlightNamesSupport.swift
         Sources/Vorssaint/Services/QuickTools/MicMuteSupport.swift
+        Sources/Vorssaint/Services/QuickTools/CloseNotificationsSupport.swift
         Sources/Vorssaint/Services/QuickTools/QuickTogglesSupport.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotCapturePolicy.swift
         Sources/Vorssaint/Services/QuickTools/ScreenshotSupport.swift

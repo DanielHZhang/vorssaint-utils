@@ -11,11 +11,13 @@ struct QuickToolsSettings: View {
     @ObservedObject private var micMute = MicMuteService.shared
     @ObservedObject private var launcher = QuickLauncherService.shared
     @ObservedObject private var cameraPreview = CameraPreviewService.shared
+    @ObservedObject private var closeNotificationsService = CloseNotificationsService.shared
     @ObservedObject private var scratchpad = ScratchpadService.shared
     @ObservedObject private var brightness = BrightnessService.shared
     @AppStorage(DefaultsKey.quickLauncherShortcutEnabled) private var launcherShortcutEnabled = true
     @AppStorage(DefaultsKey.micMuteShortcutEnabled) private var micShortcutEnabled = false
     @AppStorage(DefaultsKey.cameraPreviewShortcutEnabled) private var cameraShortcutEnabled = false
+    @AppStorage(DefaultsKey.closeNotificationsShortcutEnabled) private var closeNotificationsShortcutEnabled = false
     @AppStorage(DefaultsKey.scratchpadShortcutEnabled) private var scratchpadShortcutEnabled = false
     @AppStorage(DefaultsKey.scratchpadRetention) private var scratchpadRetention = ScratchpadRetention.never.rawValue
     @AppStorage(DefaultsKey.scratchpadCloseOnClickOutside) private var scratchpadCloseOnClickOutside = true
@@ -170,6 +172,37 @@ struct QuickToolsSettings: View {
                     Text(FeatureStrings.cameraPreview(l10n.language).pageTitle)
                 }
                 .settingsFormSectionAnchor(.cameraPreview)
+            }
+
+            if AppFeature.closeNotifications.isAvailable {
+                Section {
+                    Button {
+                        CloseNotificationsService.shared.closeAllNotifications()
+                    } label: {
+                        Label(FeatureStrings.closeNotifications(l10n.language).clearButton,
+                              systemImage: "bell.slash")
+                    }
+                    Text(FeatureStrings.closeNotifications(l10n.language).panelCaption)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Toggle(l10n.s.quickToolShortcutToggle, isOn: $closeNotificationsShortcutEnabled)
+                        .onChange(of: closeNotificationsShortcutEnabled) { _, _ in
+                            CloseNotificationsService.shared.syncWithPreferences()
+                        }
+                    ShortcutPreferenceRow(role: .closeNotifications,
+                                          isEnabled: closeNotificationsShortcutEnabled) {
+                        CloseNotificationsService.shared.syncWithPreferences()
+                    }
+                    if closeNotificationsShortcutEnabled,
+                       closeNotificationsService.shortcutRegistrationFailed {
+                        Text(l10n.s.shortcutUnavailable)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Text(FeatureStrings.closeNotifications(l10n.language).pageTitle)
+                }
+                .settingsFormSectionAnchor(.closeNotifications)
             }
 
             if AppFeature.wallpaper.isAvailable {

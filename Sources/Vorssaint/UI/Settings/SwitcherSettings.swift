@@ -258,6 +258,11 @@ struct SwitcherSettings: View {
             // before the redesign; the card's disabled state stops here.
             SwitcherAppRulesList()
                 .environment(\.isEnabled, true)
+            Divider()
+            // App window hotkeys can likewise be prepared in advance; they
+            // simply stay inert until the switcher itself is on.
+            SwitcherAppHotkeysList()
+                .environment(\.isEnabled, true)
         }
     }
 

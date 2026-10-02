@@ -162,6 +162,23 @@ enum SwitcherLetterAction: Equatable {
 enum SwitcherSessionScope: Equatable {
     case allApps
     case frontmostApp
+    /// Only the windows of one chosen app, entered through an app window
+    /// hotkey bound to that app (see `SwitcherAppHotkeys`).
+    case specificApp(String)
+
+    /// A session whose list holds the windows of a single app.
+    var isWindowScoped: Bool {
+        switch self {
+        case .allApps: return false
+        case .frontmostApp, .specificApp: return true
+        }
+    }
+
+    /// The bundle identifier a specific-app session is bound to.
+    var specificAppBundleIdentifier: String? {
+        if case .specificApp(let bundleIdentifier) = self { return bundleIdentifier }
+        return nil
+    }
 }
 
 /// How a key arriving before the asynchronous window list is ready is owned.
@@ -439,7 +456,7 @@ struct SwitcherIconRowLayout: Equatable {
         // the whole list so selecting another app never moves the icon row.
         // A focused-app session has no other apps to keep stationary; let
         // its windows fill the available display before scrolling.
-        let reservedCardCount = sessionScope == .frontmostApp
+        let reservedCardCount = sessionScope.isWindowScoped
             ? max(windowCount, maximumWindowCount)
             : min(2, max(windowCount, maximumWindowCount))
         let previewCeiling = min(maxPreviewContentWidth,
@@ -556,7 +573,7 @@ enum SwitcherSupport {
     static func usesWindowRow(simpleMode: Bool,
                               mergeWindowsByApp: Bool,
                               sessionScope: SwitcherSessionScope) -> Bool {
-        simpleMode && (!mergeWindowsByApp || sessionScope == .frontmostApp)
+        simpleMode && (!mergeWindowsByApp || sessionScope.isWindowScoped)
     }
 
     static func usesAppGroupsForMainShortcut(iconRowLayout: Bool,

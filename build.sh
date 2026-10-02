@@ -454,6 +454,7 @@ if (( TEST )); then
         Sources/Vorssaint/Core/WindowMaximizerExclusionStrings.swift
         Sources/Vorssaint/Core/DiskExclusionStrings.swift
         Sources/Vorssaint/Core/SwitcherAppRulesStrings.swift
+        Sources/Vorssaint/Core/SwitcherAppHotkeyStrings.swift
         Sources/Vorssaint/Services/QuickTools/QuickToolsSupport.swift
         Sources/Vorssaint/Services/CommandBar/CommandBarSupport.swift
         Sources/Vorssaint/Services/CommandBar/CommandBarPreferences.swift
@@ -494,6 +495,7 @@ if (( TEST )); then
         Sources/Vorssaint/Services/FocusFollowsMouse/FocusFollowsMouseSupport.swift
         Sources/Vorssaint/Services/AssistiveKeyboard.swift
         Sources/Vorssaint/Services/Switcher/SwitcherModels.swift
+        Sources/Vorssaint/Services/Switcher/SwitcherAppHotkeys.swift
         Sources/Vorssaint/Services/Switcher/WindowServerCaptureQueue.swift
         Sources/Vorssaint/Services/Switcher/SwitcherSupport.swift
         Sources/Vorssaint/Services/Switcher/SpaceHopSupport.swift

@@ -85,7 +85,10 @@ struct MetricsTests {
                 NotchVolumeKeyTests.run(suite)
                 NotchSettingsTabRowTests.run(suite)
             }),
-            ("switcher-model", { SwitcherModelFeatureTests.run(suite) }),
+            ("switcher-model", {
+                SwitcherModelFeatureTests.run(suite)
+                SwitcherAppHotkeyTests.run(suite)
+            }),
             ("agents", { NotchAgentTests.run(suite) }),
             ("features", {
                 FeatureCatalogTests.run(suite)

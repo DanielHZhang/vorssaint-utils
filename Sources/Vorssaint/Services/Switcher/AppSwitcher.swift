@@ -118,6 +118,13 @@ final class AppSwitcher: ObservableObject {
     private var routeSessionActive = false
     private var routeShortcut = GlobalShortcut.switcherDefault
     private var routeWindowShortcut = GlobalShortcut.switcherWindowDefault
+    /// App window hotkeys with their recorded combinations parsed, plus the
+    /// running process for each bound app. Refreshed when preferences sync
+    /// and whenever an app launches or quits, so a key press can be claimed
+    /// (or passed through) on the tap thread without a workspace lookup.
+    private var routeAppHotkeys: [(bundleIdentifier: String, shortcut: GlobalShortcut)] = []
+    private var routeAppHotkeyPIDs: [String: pid_t] = [:]
+    private var appHotkeyAppObservers: [NSObjectProtocol] = []
     private var routeCapturing = false
     private var routeCanStartSession = false
     private var routePendingSessionStart: SwitcherPendingSessionStart?
@@ -224,9 +231,11 @@ final class AppSwitcher: ObservableObject {
         }
         let canStartSession = tapIsWanted
         routeLock.withLock { routeCanStartSession = canStartSession }
+        refreshAppHotkeyRoutes()
         if canStartSession {
             startObservingKeyboardLayout()
             startObservingWake()
+            startObservingAppHotkeyApps()
             installTap()
             // A live tap can pick up a shortcut change without rebuilding;
             // apply here so the native hotkeys follow immediately.
@@ -249,6 +258,7 @@ final class AppSwitcher: ObservableObject {
             restoreNativeHotkeys()
             stopObservingKeyboardLayout()
             stopObservingWake()
+            stopObservingAppHotkeyApps()
             removeTap()
             WindowPreviewProvider.shared.stopWarming()
         }
@@ -260,6 +270,7 @@ final class AppSwitcher: ObservableObject {
     func suspend() {
         restoreNativeHotkeys()
         stopObservingWake()
+        stopObservingAppHotkeyApps()
         routeLock.withLock { routeCanStartSession = false }
         removeTap()
     }
@@ -314,6 +325,46 @@ final class AppSwitcher: ObservableObject {
         wakeObserver = nil
         wakeRetry?.cancel()
         wakeRetry = nil
+    }
+
+    /// Rebuilds the app-hotkey routing tables from the saved bindings and the
+    /// apps running right now. Runs on the main thread (preference sync and
+    /// workspace notifications), never on the tap thread.
+    private func refreshAppHotkeyRoutes() {
+        let bindings = SwitcherAppHotkeys.decode(
+            UserDefaults.standard.data(forKey: DefaultsKey.switcherAppHotkeys))
+        let parsed = bindings.compactMap { binding in
+            binding.parsedShortcut.map { (bundleIdentifier: binding.bundleIdentifier, shortcut: $0) }
+        }
+        var pids: [String: pid_t] = [:]
+        for app in NSWorkspace.shared.runningApplications {
+            guard let bundleIdentifier = app.bundleIdentifier,
+                  parsed.contains(where: { $0.bundleIdentifier == bundleIdentifier })
+            else { continue }
+            pids[bundleIdentifier] = app.processIdentifier
+        }
+        routeLock.withLock {
+            routeAppHotkeys = parsed
+            routeAppHotkeyPIDs = pids
+        }
+    }
+
+    private func startObservingAppHotkeyApps() {
+        guard appHotkeyAppObservers.isEmpty else { return }
+        let center = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification,
+                     NSWorkspace.didTerminateApplicationNotification] {
+            appHotkeyAppObservers.append(center.addObserver(
+                forName: name, object: nil, queue: .main
+            ) { [weak self] _ in self?.refreshAppHotkeyRoutes() })
+        }
+    }
+
+    private func stopObservingAppHotkeyApps() {
+        for observer in appHotkeyAppObservers {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        }
+        appHotkeyAppObservers = []
     }
 
     private func recoverTapAfterWake() {
@@ -535,9 +586,10 @@ final class AppSwitcher: ObservableObject {
             return Unmanaged.passUnretained(event)
         }
 
-        let (active, shortcut, windowShortcut, capturing, canStartSession, hasPendingStart) = routeLock.withLock {
+        let (active, shortcut, windowShortcut, capturing, canStartSession, hasPendingStart,
+             appHotkeys, appHotkeyPIDs) = routeLock.withLock {
             (routeSessionActive, routeShortcut, routeWindowShortcut, routeCapturing,
-             routeCanStartSession, routePendingSessionStart != nil)
+             routeCanStartSession, routePendingSessionStart != nil, routeAppHotkeys, routeAppHotkeyPIDs)
         }
         // A shortcut field in Settings has the keyboard: hand every key
         // straight through so the user can record this feature's own
@@ -596,7 +648,17 @@ final class AppSwitcher: ObservableObject {
             let matchesWindows = !matchesApps
                 && (windowShortcut.matches(event: event, allowingExtraShift: true)
                     || windowShortcut.matchesByCharacter(event: event))
-            let matchesShortcut = matchesApps || matchesWindows
+            // An app window hotkey claims the press only while its app is
+            // running; otherwise the key belongs to whatever else answers it
+            // (⌘1 in a browser, say). The switcher's own two shortcuts win a
+            // tie, so an app hotkey on the same combination stays reachable
+            // only where they do not reach.
+            let appHotkey = (matchesApps || matchesWindows) ? nil : appHotkeys.first { entry in
+                appHotkeyPIDs[entry.bundleIdentifier] != nil
+                    && (entry.shortcut.matches(event: event, allowingExtraShift: true)
+                        || entry.shortcut.matchesByCharacter(event: event))
+            }
+            let matchesShortcut = matchesApps || matchesWindows || appHotkey != nil
             guard matchesShortcut || hasPendingStart else {
                 return Unmanaged.passUnretained(event)
             }
@@ -620,14 +682,17 @@ final class AppSwitcher: ObservableObject {
             case .routeShortcut:
                 guard matchesShortcut else { return Unmanaged.passUnretained(event) }
 
-                let requestedShortcut = matchesWindows ? windowShortcut : shortcut
-                let requestedScope: SwitcherSessionScope = matchesWindows ? .frontmostApp : .allApps
+                let requestedShortcut = appHotkey?.shortcut ?? (matchesWindows ? windowShortcut : shortcut)
+                let requestedScope: SwitcherSessionScope = appHotkey.map {
+                    .specificApp($0.bundleIdentifier)
+                } ?? (matchesWindows ? .frontmostApp : .allApps)
                 let reversed: Bool
-                if matchesWindows {
-                    let positional = windowShortcut.matches(event: event, allowingExtraShift: true)
+                if matchesWindows || appHotkey != nil {
+                    let navigationShortcut = appHotkey?.shortcut ?? windowShortcut
+                    let positional = navigationShortcut.matches(event: event, allowingExtraShift: true)
                     reversed = SwitcherSupport.windowNavigationDelta(
                         positionalMatch: positional,
-                        shiftIsNavigationModifier: windowShortcut.shiftIsNavigationModifier,
+                        shiftIsNavigationModifier: navigationShortcut.shiftIsNavigationModifier,
                         shiftHeld: event.flags.contains(.maskShift)
                     ) < 0
                 } else {
@@ -773,16 +838,25 @@ final class AppSwitcher: ObservableObject {
         }
         let shortcut = sessionShortcut ?? appsShortcut
         switch keyCode {
-        case _ where keyCode == shortcut.keyCode && shortcut.matches(event: event, allowingExtraShift: true):
-            if shortcut.shiftIsNavigationModifier, flags.contains(.maskShift), consumesShiftBackChordTab() {
+        case _ where (keyCode == shortcut.keyCode && shortcut.matches(event: event, allowingExtraShift: true))
+            || (sessionScope.specificAppBundleIdentifier != nil
+                && shortcut.matchesByCharacter(event: event)):
+            // A specific-app hotkey can be claimed by the character it types
+            // on a non-US layout; Shift then belongs to the character, not to
+            // backward navigation. Positional matches keep the usual rule.
+            let positional = shortcut.matches(event: event, allowingExtraShift: true)
+            if positional, shortcut.shiftIsNavigationModifier, flags.contains(.maskShift), consumesShiftBackChordTab() {
                 break
             }
-            let delta = shortcut.shiftIsNavigationModifier && flags.contains(.maskShift) ? -1 : 1
+            let delta = SwitcherSupport.windowNavigationDelta(
+                positionalMatch: positional,
+                shiftIsNavigationModifier: shortcut.shiftIsNavigationModifier,
+                shiftHeld: flags.contains(.maskShift))
             // Holding the key stops at the list's end instead of wrapping, like
             // the system switcher; a fresh press wraps around (issue #187).
             let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
             advanceSelection(by: delta, wrapping: !isRepeat)
-        case _ where sessionScope == .frontmostApp
+        case _ where sessionScope.isWindowScoped
             && keyCode == appsShortcut.keyCode
             && appsShortcut.matches(event: event,
                                     allowingExtraShift: true,
@@ -817,7 +891,7 @@ final class AppSwitcher: ObservableObject {
                 shiftIsNavigationModifier: windowShortcut.shiftIsNavigationModifier,
                 shiftHeld: flags.contains(.maskShift)
             )
-            if sessionScope == .frontmostApp {
+            if sessionScope.isWindowScoped {
                 let isRepeat = event.getIntegerValueField(.keyboardEventAutorepeat) != 0
                 advanceSelection(by: delta, wrapping: !isRepeat)
             } else {
@@ -901,6 +975,22 @@ final class AppSwitcher: ObservableObject {
             discardPendingSessionStart(generation: generation)
             return
         }
+        // A specific-app session enumerates with its app's process as the
+        // scope, so the window cap spends its slots on that app alone. The
+        // app may have quit since the key was claimed; then there is nothing
+        // to show and the pending start goes away quietly.
+        let scopedAppPID: pid_t?
+        switch requested.scope {
+        case .allApps: scopedAppPID = nil
+        case .frontmostApp: scopedAppPID = reportedFrontPID
+        case .specificApp(let bundleIdentifier):
+            scopedAppPID = NSWorkspace.shared.runningApplications
+                .first { $0.bundleIdentifier == bundleIdentifier }?.processIdentifier
+        }
+        if requested.scope != .allApps, scopedAppPID == nil {
+            discardPendingSessionStart(generation: generation)
+            return
+        }
         let enumerationSnapshot = WindowEnumerator.snapshot()
         let displayScope = currentDisplayScope
         enumerationQueue.async { [weak self] in
@@ -918,7 +1008,7 @@ final class AppSwitcher: ObservableObject {
                 preservingGroupedWindows: preservesGroupedWindows,
                 snapshot: enumerationSnapshot,
                 displayScope: displayScope,
-                scopedToFrontmostPID: requested.scope == .frontmostApp ? reportedFrontPID : nil,
+                scopedToFrontmostPID: scopedAppPID,
                 resolveSource: { items in
                     let sourceItems = requested.scope == .frontmostApp
                         ? SwitcherSupport.frontmostAppWindows(allItems: items, frontmostPID: reportedFrontPID)
@@ -957,6 +1047,12 @@ final class AppSwitcher: ObservableObject {
                 sessionWindows = SwitcherSupport.frontmostAppWindows(
                     allItems: enumeration.items,
                     frontmostPID: reportedFrontPID)
+            case .specificApp:
+                sessionWindows = scopedAppPID.map {
+                    SwitcherSupport.frontmostAppWindows(
+                        allItems: enumeration.items,
+                        frontmostPID: $0)
+                } ?? []
             }
             DispatchQueue.main.async { [weak self] in
                 self?.finishPendingSession(generation: generation,
@@ -973,8 +1069,11 @@ final class AppSwitcher: ObservableObject {
     /// instead of most-recently-used order, so repeated presses of the window
     /// shortcut visit every window instead of bouncing between two.
     private func sessionList(windows: [SwitcherItem], currentID: String?) -> [SwitcherItem] {
-        let windowScoped = routeLock.withLock { routePendingSessionStart?.scope } == .frontmostApp
-        guard windowScoped,
+        // Cycle-in-window-order belongs to the window shortcut alone. A
+        // specific-app session always starts from most-recent use, because
+        // its first press promises the app's most recent window.
+        let frontmostScoped = routeLock.withLock { routePendingSessionStart?.scope } == .frontmostApp
+        guard frontmostScoped,
               UserDefaults.standard.bool(forKey: DefaultsKey.switcherWindowCycleInOrder)
         else { return SwitcherSupport.orderedForSession(windows, currentID: currentID) }
         return SwitcherSupport.windowOrderedForSession(windows, currentID: currentID)
@@ -1058,7 +1157,7 @@ final class AppSwitcher: ObservableObject {
         // other window — the toggle target, which may be another window of the
         // same app. Shift starts from the far end. With no on-screen window
         // the session opens on the first entry from another app.
-        selectedIndex = pending.scope == .frontmostApp
+        selectedIndex = pending.scope.isWindowScoped
             ? SwitcherSupport.initialWindowScopedSelectionIndex(itemCount: list.count,
                                                                 hasForegroundItem: listedSource != nil,
                                                                 reversed: pending.reversed)

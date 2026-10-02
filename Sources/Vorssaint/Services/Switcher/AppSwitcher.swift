@@ -968,6 +968,18 @@ final class AppSwitcher: ObservableObject {
         }
     }
 
+    /// The session's window list. With the cycle-in-window-order preference,
+    /// a window-scoped session rotates the app's windows in window order
+    /// instead of most-recently-used order, so repeated presses of the window
+    /// shortcut visit every window instead of bouncing between two.
+    private func sessionList(windows: [SwitcherItem], currentID: String?) -> [SwitcherItem] {
+        let windowScoped = routeLock.withLock { routePendingSessionStart?.scope } == .frontmostApp
+        guard windowScoped,
+              UserDefaults.standard.bool(forKey: DefaultsKey.switcherWindowCycleInOrder)
+        else { return SwitcherSupport.orderedForSession(windows, currentID: currentID) }
+        return SwitcherSupport.windowOrderedForSession(windows, currentID: currentID)
+    }
+
     private func finishPendingSession(generation: UInt64,
                                       reportedFrontPID: pid_t,
                                       focusedSourceWindowID: CGWindowID?,
@@ -998,7 +1010,7 @@ final class AppSwitcher: ObservableObject {
             windows.contains { $0.id == item.id } ? item : nil
         }
 
-        let list = SwitcherSupport.orderedForSession(windows, currentID: listedSource?.id)
+        let list = sessionList(windows: windows, currentID: listedSource?.id)
         guard let pending = routeLock.withLock({ () -> SwitcherPendingSessionStart? in
             guard SwitcherSupport.isCurrentSessionStart(
                 generation: generation,

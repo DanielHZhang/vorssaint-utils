@@ -1289,6 +1289,8 @@ struct Strings {
     let shelfClearOnCloseCaption: String
     let shelfShortcutFinderSelection: String
     let shelfShortcutFinderSelectionCaption: String
+    let switcherWindowCycleInOrder: String
+    let switcherWindowCycleInOrderCaption: String
 }
 
 // MARK: - Português (Brasil)
@@ -2375,7 +2377,9 @@ extension Strings {
         shelfClearOnClose: "Limpar ao fechar",
         shelfClearOnCloseCaption: "Esvazia a área somente quando você clica no botão de fechar. Ocultar automaticamente e encolher preservam os itens.",
         shelfShortcutFinderSelection: "Adicionar a seleção do Finder com o atalho",
-        shelfShortcutFinderSelectionCaption: "Com o Finder em primeiro plano, o atalho abre a área temporária já com os arquivos selecionados. Sem seleção, ela abre como sempre."
+        shelfShortcutFinderSelectionCaption: "Com o Finder em primeiro plano, o atalho abre a área temporária já com os arquivos selecionados. Sem seleção, ela abre como sempre.",
+        switcherWindowCycleInOrder: "Percorrer janelas na ordem das janelas",
+        switcherWindowCycleInOrderCaption: "O atalho de janela percorre as janelas do app na ordem das janelas, então pressionamentos repetidos visitam todas as janelas em vez de alternar entre as duas mais recentes."
     )
 }
 
@@ -3463,6 +3467,8 @@ extension Strings {
         shelfClearOnClose: "Clear when closed",
         shelfClearOnCloseCaption: "Empties the shelf only when you click its close button. Automatic hiding and collapsing keep the items.",
         shelfShortcutFinderSelection: "Add the Finder selection with the shortcut",
-        shelfShortcutFinderSelectionCaption: "With Finder in front, the shortcut opens the shelf with the selected files already in it. With nothing selected, it opens as usual."
+        shelfShortcutFinderSelectionCaption: "With Finder in front, the shortcut opens the shelf with the selected files already in it. With nothing selected, it opens as usual.",
+        switcherWindowCycleInOrder: "Cycle windows in window order",
+        switcherWindowCycleInOrderCaption: "The window shortcut steps through the app's windows in window order, so repeated presses visit every window instead of bouncing between the two most recent ones."
     )
 }

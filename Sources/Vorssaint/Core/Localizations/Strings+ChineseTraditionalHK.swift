@@ -1086,6 +1086,8 @@ extension Strings {
         shelfClearOnClose: "關閉時清空",
         shelfClearOnCloseCaption: "只有點按關閉按鈕時才會清空暫存架。自動隱藏或收合時會保留項目。",
         shelfShortcutFinderSelection: "使用快捷鍵加入 Finder 所選項目",
-        shelfShortcutFinderSelectionCaption: "Finder 位於前景時，快捷鍵會打開暫存架並放入所選檔案。未選取任何項目時照常打開。"
+        shelfShortcutFinderSelectionCaption: "Finder 位於前景時，快捷鍵會打開暫存架並放入所選檔案。未選取任何項目時照常打開。",
+        switcherWindowCycleInOrder: "按視窗順序循環切換視窗",
+        switcherWindowCycleInOrderCaption: "視窗快捷鍵按視窗順序步進 App 嘅視窗，因此反覆撳掣會依序去勻每個視窗，而唔係喺最近嗰兩個之間來回跳。"
     )
 }

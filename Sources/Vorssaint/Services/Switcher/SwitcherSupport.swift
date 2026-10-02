@@ -627,6 +627,24 @@ enum SwitcherSupport {
         return ordered
     }
 
+    /// The window-order alternative for a window-scoped session: windows sorted
+    /// by window number and rotated so the current window stands first.
+    ///
+    /// Use order makes a quick repeat of the window shortcut bounce between
+    /// the two most recently used windows. Window numbers never change while
+    /// a window lives, so this rotation is stable across switches: repeated
+    /// presses from window A visit B, then C, then A again, in window order.
+    static func windowOrderedForSession(_ items: [SwitcherItem], currentID: String?) -> [SwitcherItem] {
+        let sorted = items.enumerated().sorted { lhs, rhs in
+            let lhsID = lhs.element.windowID ?? CGWindowID.max
+            let rhsID = rhs.element.windowID ?? CGWindowID.max
+            if lhsID != rhsID { return lhsID < rhsID }
+            return lhs.offset < rhs.offset
+        }.map(\.element)
+        guard let currentID, let index = sorted.firstIndex(where: { $0.id == currentID }) else { return sorted }
+        return Array(sorted[index...]) + Array(sorted[..<index])
+    }
+
     /// A focused-window Accessibility query is useful unless exactly one
     /// visible window already identifies the session source. With no visible
     /// windows, AX can still identify a minimized source window.

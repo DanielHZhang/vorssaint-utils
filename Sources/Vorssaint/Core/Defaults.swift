@@ -101,6 +101,7 @@ enum DefaultsKey {
     static let systemShortcutTakeOverKeys = "systemShortcutTakeOverKeys"
     static let switcherShortcut = "switcherShortcut"      // GlobalShortcut storage value
     static let switcherWindowShortcut = "switcherWindowShortcut" // GlobalShortcut storage value
+    static let switcherWindowCycleInOrder = "switcherWindowCycleInOrder" // window shortcut cycles in window order, not most-recently-used order
     static let switcherIconRowMode = "switcherIconRowMode"
     static let switcherSimpleMode = "switcherSimpleMode"  // app-only row without window captures
     static let switcherMergeTabs = "switcherMergeTabs"     // show one switcher entry per app (collapse all of an app's windows)
@@ -1184,6 +1185,7 @@ enum Defaults {
         DefaultsKey.switcherTakeOverSystemShortcuts: false,
         DefaultsKey.switcherShortcut: "command:48",
         DefaultsKey.switcherWindowShortcut: GlobalShortcut.switcherWindowDefault.storageValue,
+        DefaultsKey.switcherWindowCycleInOrder: false,
         DefaultsKey.switcherIconRowMode: false,
         DefaultsKey.switcherSimpleMode: false,
         DefaultsKey.switcherMergeTabs: false,

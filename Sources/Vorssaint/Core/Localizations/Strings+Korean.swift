@@ -1086,6 +1086,8 @@ extension Strings {
         shelfClearOnClose: "닫을 때 항목 지우기",
         shelfClearOnCloseCaption: "닫기 버튼을 클릭할 때만 선반을 비웁니다. 자동으로 숨겨지거나 접을 때는 항목을 유지합니다.",
         shelfShortcutFinderSelection: "단축키로 Finder 선택 항목 추가",
-        shelfShortcutFinderSelectionCaption: "Finder가 앞에 있을 때 단축키를 누르면 선택한 파일이 담긴 선반이 열립니다. 아무것도 선택하지 않았다면 평소처럼 열립니다."
+        shelfShortcutFinderSelectionCaption: "Finder가 앞에 있을 때 단축키를 누르면 선택한 파일이 담긴 선반이 열립니다. 아무것도 선택하지 않았다면 평소처럼 열립니다.",
+        switcherWindowCycleInOrder: "윈도우 순서대로 윈도우 순환",
+        switcherWindowCycleInOrderCaption: "윈도우 단축키는 가장 최근 두 윈도우 사이를 오가는 대신 앱의 윈도우를 윈도우 순서대로 이동하므로, 반복해서 누르면 모든 윈도우를 방문합니다."
     )
 }

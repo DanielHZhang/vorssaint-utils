@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "Kapatınca temizle",
         shelfClearOnCloseCaption: "Rafı yalnızca kapatma düğmesine tıkladığında boşaltır. Otomatik gizleme ve daraltma öğeleri korur.",
         shelfShortcutFinderSelection: "Kısayolla Finder seçimini ekle",
-        shelfShortcutFinderSelectionCaption: "Finder öndeyken kısayol, rafı seçili dosyalar içinde olacak şekilde açar. Hiçbir şey seçili değilse her zamanki gibi açılır."
+        shelfShortcutFinderSelectionCaption: "Finder öndeyken kısayol, rafı seçili dosyalar içinde olacak şekilde açar. Hiçbir şey seçili değilse her zamanki gibi açılır.",
+        switcherWindowCycleInOrder: "Pencereleri pencere sırasında dolaş",
+        switcherWindowCycleInOrderCaption: "Pencere kısayolu, uygulamanın pencerelerinde en son kullanılan ikisi arasında gidip gelmek yerine pencere sırasında adım adım ilerler; böylece art arda basışlar her pencereyi ziyaret eder."
     )
 }

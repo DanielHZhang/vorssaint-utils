@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "Borrar al cerrar",
         shelfClearOnCloseCaption: "Vacía el estante solo al hacer clic en el botón de cierre. Ocultarlo automáticamente y contraerlo conservan los ítems.",
         shelfShortcutFinderSelection: "Añadir la selección del Finder con el atajo",
-        shelfShortcutFinderSelectionCaption: "Con el Finder al frente, el atajo abre el estante con los archivos seleccionados ya dentro. Sin selección, se abre como siempre."
+        shelfShortcutFinderSelectionCaption: "Con el Finder al frente, el atajo abre el estante con los archivos seleccionados ya dentro. Sin selección, se abre como siempre.",
+        switcherWindowCycleInOrder: "Recorrer ventanas en orden de ventanas",
+        switcherWindowCycleInOrderCaption: "El atajo de ventana avanza por las ventanas de la app en orden de ventanas, de modo que las pulsaciones repetidas visitan cada ventana en lugar de saltar entre las dos más recientes."
     )
 }

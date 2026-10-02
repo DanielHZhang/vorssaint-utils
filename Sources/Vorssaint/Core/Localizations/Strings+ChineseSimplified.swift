@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "关闭时清空",
         shelfClearOnCloseCaption: "仅在点按关闭按钮时清空暂存架。自动隐藏或收起时会保留项目。",
         shelfShortcutFinderSelection: "使用快捷键添加访达中的所选项",
-        shelfShortcutFinderSelectionCaption: "访达位于前台时，快捷键会打开暂存架并放入所选文件。未选择任何内容时照常打开。"
+        shelfShortcutFinderSelectionCaption: "访达位于前台时，快捷键会打开暂存架并放入所选文件。未选择任何内容时照常打开。",
+        switcherWindowCycleInOrder: "按窗口顺序循环切换窗口",
+        switcherWindowCycleInOrderCaption: "窗口快捷键按窗口顺序步进当前应用的窗口，因此反复按键会依次访问每个窗口，而不是在最近的两个之间来回跳。"
     )
 }

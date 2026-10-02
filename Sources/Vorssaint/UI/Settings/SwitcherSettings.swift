@@ -22,6 +22,7 @@ struct SwitcherSettings: View {
     @AppStorage(DefaultsKey.switcherScreenPlacement) private var switcherScreenPlacement = SwitcherScreenPlacement.fallback.rawValue
     @AppStorage(DefaultsKey.switcherCurrentDisplayOnly) private var switcherCurrentDisplayOnly = false
     @AppStorage(DefaultsKey.switcherCurrentSpaceOnly) private var switcherCurrentSpaceOnly = false
+    @AppStorage(DefaultsKey.switcherWindowCycleInOrder) private var switcherWindowCycleInOrder = false
     @AppStorage(DefaultsKey.switcherSearchPinEnabled) private var switcherSearchPinEnabled = false
     @AppStorage(DefaultsKey.switcherShowShortcutHints) private var switcherShowShortcutHints = true
     @AppStorage(DefaultsKey.switcherAppearanceDelay) private var switcherAppearanceDelay = SwitcherSupport.defaultAppearanceDelayMilliseconds
@@ -149,6 +150,10 @@ struct SwitcherSettings: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                SettingsRow(symbol: "arrow.triangle.2.circlepath", title: l10n.s.switcherWindowCycleInOrder,
+                            caption: l10n.s.switcherWindowCycleInOrderCaption) {
+                    Toggle(l10n.s.switcherWindowCycleInOrder, isOn: $switcherWindowCycleInOrder).labelsHidden()
+                }
                 SettingsRow(symbol: "command", title: l10n.s.switcherTakeOverSystemShortcuts,
                             caption: l10n.s.switcherTakeOverSystemShortcutsCaption) {
                     Toggle(l10n.s.switcherTakeOverSystemShortcuts, isOn: $switcherTakeOverSystemShortcuts)

@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "Beim Schließen leeren",
         shelfClearOnCloseCaption: "Leert die Ablage nur, wenn du auf die Schließen-Taste klickst. Automatisches Ausblenden und Einklappen behalten die Objekte.",
         shelfShortcutFinderSelection: "Finder-Auswahl per Kurzbefehl hinzufügen",
-        shelfShortcutFinderSelectionCaption: "Ist der Finder im Vordergrund, öffnet der Kurzbefehl die Ablage bereits mit den ausgewählten Dateien. Ohne Auswahl öffnet sie sich wie gewohnt."
+        shelfShortcutFinderSelectionCaption: "Ist der Finder im Vordergrund, öffnet der Kurzbefehl die Ablage bereits mit den ausgewählten Dateien. Ohne Auswahl öffnet sie sich wie gewohnt.",
+        switcherWindowCycleInOrder: "Fenster in Fensterreihenfolge durchlaufen",
+        switcherWindowCycleInOrderCaption: "Der Fenster-Kurzbefehl schreitet die Fenster der App in Fensterreihenfolge ab, sodass wiederholtes Drücken jedes Fenster besucht, statt zwischen den zwei zuletzt verwendeten zu springen."
     )
 }

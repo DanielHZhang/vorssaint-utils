@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "Vymazať pri zatvorení",
         shelfClearOnCloseCaption: "Vyprázdni policu len vtedy, keď kliknete na jej tlačidlo zatvorenia. Automatické skrytie a zbalenie položky zachovajú.",
         shelfShortcutFinderSelection: "Pridať výber z Findera skratkou",
-        shelfShortcutFinderSelectionCaption: "Keď je Finder v popredí, skratka otvorí policu už s vybranými súbormi. Ak nie je nič vybraté, otvorí sa ako zvyčajne."
+        shelfShortcutFinderSelectionCaption: "Keď je Finder v popredí, skratka otvorí policu už s vybranými súbormi. Ak nie je nič vybraté, otvorí sa ako zvyčajne.",
+        switcherWindowCycleInOrder: "Prechádzať okná v poradí okien",
+        switcherWindowCycleInOrderCaption: "Skratka okna prechádza oknami aplikácie v poradí okien, takže opakované stlačenia navštívia každé okno namiesto skákania medzi dvoma najnovšími."
     )
 }

@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "閉じるときに項目を消去",
         shelfClearOnCloseCaption: "閉じるボタンをクリックしたときだけシェルフを空にします。自動的に隠れた場合や折りたたんだ場合は項目を保持します。",
         shelfShortcutFinderSelection: "ショートカットで Finder の選択項目を追加",
-        shelfShortcutFinderSelectionCaption: "Finder が最前面にあるとき、ショートカットで選択中のファイルが入った状態のシェルフを開きます。何も選択していない場合は通常どおり開きます。"
+        shelfShortcutFinderSelectionCaption: "Finder が最前面にあるとき、ショートカットで選択中のファイルが入った状態のシェルフを開きます。何も選択していない場合は通常どおり開きます。",
+        switcherWindowCycleInOrder: "ウィンドウ順にウィンドウを切り替える",
+        switcherWindowCycleInOrderCaption: "ウィンドウショートカットはアプリのウィンドウをウィンドウ順に移動します。繰り返し押すと、最近使った2つの間を行き来せず、すべてのウィンドウを巡ります。"
     )
 }

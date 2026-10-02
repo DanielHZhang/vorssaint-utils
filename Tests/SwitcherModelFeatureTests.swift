@@ -1443,6 +1443,47 @@ enum SwitcherModelFeatureTests {
         suite.expect(SwitcherSupport.orderedForSession(focusCandidates, currentID: nil) == focusCandidates
                && SwitcherSupport.orderedForSession(focusCandidates, currentID: "missing") == focusCandidates,
                "an unavailable or removed source leaves the legitimate candidate order unchanged")
+
+        // With cycle-in-window-order, the window-scoped session list rotates
+        // the app's windows in window order around the current one: repeated
+        // quick presses walk A -> B -> C -> A instead of bouncing between the
+        // two most recently used windows.
+        let cycleA = SwitcherItem.window(id: 101, title: "A", appName: "CycleApp",
+                                         pid: 77, isOnScreen: true, frame: .zero)
+        let cycleB = SwitcherItem.window(id: 207, title: "B", appName: "CycleApp",
+                                         pid: 77, isOnScreen: true, frame: .zero)
+        let cycleC = SwitcherItem.window(id: 350, title: "C", appName: "CycleApp",
+                                         pid: 77, isOnScreen: true, frame: .zero)
+        let cycleShuffled = [cycleC, cycleA, cycleB]
+        suite.expect(SwitcherSupport.windowOrderedForSession(cycleShuffled, currentID: cycleB.id).map(\.windowID)
+               == [207, 350, 101],
+               "the window-order session list rotates around the current window")
+        suite.expect(SwitcherSupport.windowOrderedForSession(cycleShuffled, currentID: nil).map(\.windowID)
+               == [101, 207, 350]
+               && SwitcherSupport.windowOrderedForSession(cycleShuffled, currentID: "missing").map(\.windowID)
+               == [101, 207, 350],
+               "without a current window the window-order list is plain window order")
+        var cycleFocused = cycleA
+        var cycleSequence: [String] = []
+        for _ in 0..<4 {
+            let session = SwitcherSupport.windowOrderedForSession(cycleShuffled, currentID: cycleFocused.id)
+            let index = SwitcherSupport.initialWindowScopedSelectionIndex(
+                itemCount: session.count, hasForegroundItem: true, reversed: false)
+            cycleFocused = session[index]
+            cycleSequence.append(cycleFocused.title)
+        }
+        suite.expect(cycleSequence == ["B", "C", "A", "B"],
+               "repeated window-shortcut presses walk A -> B -> C -> A in window order")
+        let cycleReversed = SwitcherSupport.windowOrderedForSession(cycleShuffled, currentID: cycleA.id)
+        suite.expect(cycleReversed[SwitcherSupport.initialWindowScopedSelectionIndex(
+               itemCount: cycleReversed.count, hasForegroundItem: true, reversed: true)].title == "C",
+               "a reversed window-shortcut press steps back to the previous window in window order")
+        suite.expect(SwitcherSupport.windowOrderedForSession(
+               [cycleC, cycleA, .appOnly(appName: "CycleApp", pid: 77)], currentID: cycleA.id).map(\.windowID)
+               == [101, 350, nil],
+               "an app entry without a window rides at the end of the window-order list")
+        suite.expect(Defaults.registeredDefaults[DefaultsKey.switcherWindowCycleInOrder] as? Bool == false,
+               "cycling in window order is a registered default and off until chosen")
         let focusSourceOnOtherDisplay = SwitcherSupport.sessionSourceItem(frontmostPID: onRightDisplay.pid,
             focusedWindowID: onRightDisplay.windowID, items: [onRightDisplay, onLeftDisplay])
         let displayFocusCandidates = SwitcherSupport.itemsOnDisplay([onRightDisplay, onLeftDisplay],

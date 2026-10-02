@@ -1085,6 +1085,8 @@ extension Strings {
         shelfClearOnClose: "Vider à la fermeture",
         shelfClearOnCloseCaption: "Vide l’étagère uniquement lorsque vous cliquez sur le bouton de fermeture. Le masquage automatique et la réduction conservent les éléments.",
         shelfShortcutFinderSelection: "Ajouter la sélection du Finder avec le raccourci",
-        shelfShortcutFinderSelectionCaption: "Quand le Finder est au premier plan, le raccourci ouvre l’étagère avec les fichiers sélectionnés déjà dedans. Sans sélection, elle s’ouvre comme d’habitude."
+        shelfShortcutFinderSelectionCaption: "Quand le Finder est au premier plan, le raccourci ouvre l’étagère avec les fichiers sélectionnés déjà dedans. Sans sélection, elle s’ouvre comme d’habitude.",
+        switcherWindowCycleInOrder: "Parcourir les fenêtres dans l'ordre des fenêtres",
+        switcherWindowCycleInOrderCaption: "Le raccourci de fenêtre parcourt les fenêtres de l'app dans l'ordre des fenêtres : des pressions répétées visitent chaque fenêtre au lieu d'osciller entre les deux plus récentes."
     )
 }

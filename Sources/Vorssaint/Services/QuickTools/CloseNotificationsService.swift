@@ -145,7 +145,8 @@ private struct CloseNotificationsNativeAccess: CloseNotificationAccess {
             var description: CFString?
             let described = AXUIElementCopyActionDescription(element, name as CFString, &description)
             return CloseNotificationAction(name: name,
-                                           description: described == .success ? description as String? : nil)
+                                           description: described == .success
+                                               ? description.map { $0 as String } : nil)
         }
     }
 

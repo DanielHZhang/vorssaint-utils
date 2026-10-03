@@ -198,15 +198,17 @@ struct MenuBarMetricsPreview: View {
             .frame(width: MenuBarRenderer.rateBlockWidth(style: style),
                    height: style == .readable ? 22 : 20,
                    alignment: .center)
-        case let .batteryBlock(percent, isCharging, style):
+        case let .batteryBlock(percent, isCharging, showsPercent, style):
             HStack(spacing: style == .readable ? 5 : 4) {
                 Image(systemName: MenuBarRenderer.batterySymbol(for: percent, isCharging: isCharging))
                     .font(.system(size: style == .readable ? 17 : 15.5, weight: .regular))
-                Text("\(max(0, min(100, percent)))%")
-                    .font(.system(size: style == .readable ? 13 : 12,
-                                  weight: .semibold,
-                                  design: .monospaced))
-                    .frame(minWidth: style == .readable ? 33 : 30, alignment: .leading)
+                if showsPercent {
+                    Text("\(max(0, min(100, percent)))%")
+                        .font(.system(size: style == .readable ? 13 : 12,
+                                      weight: .semibold,
+                                      design: .monospaced))
+                        .frame(minWidth: style == .readable ? 33 : 30, alignment: .leading)
+                }
             }
             .foregroundStyle(.white)
             .fixedSize(horizontal: true, vertical: true)

@@ -19,4 +19,18 @@ enum BatteryTimeSupport {
         let totalMinutes = max(1, Int(seconds / 60))
         return "\(totalMinutes / 60)h \(totalMinutes % 60)m"
     }
+
+    /// Whether the menu bar battery readout shows its percentage. The
+    /// number steps aside when it carries no information: the battery is
+    /// full (100%, even while the charging bolt still shows), or it is
+    /// holding at a charge limit — plugged in but not charging below
+    /// full, which is where macOS optimized charging parks it. Charging
+    /// and discharging below full keep the percentage.
+    static func showsMenuBarPercent(chargePercent: Int?,
+                                    isCharging: Bool,
+                                    externalConnected: Bool) -> Bool {
+        guard let chargePercent else { return false }
+        if chargePercent >= 100 { return false }
+        return !(externalConnected && !isCharging)
+    }
 }

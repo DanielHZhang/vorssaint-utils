@@ -233,6 +233,38 @@ enum MetricsFeatureTests {
         suite.expect(BatteryTimeSupport.formatted(seconds: 30) == "0h 1m",
                "battery time keeps a positive final minute visible")
 
+        suite.expect(BatteryTimeSupport.showsMenuBarPercent(chargePercent: 85,
+                                                            isCharging: false,
+                                                            externalConnected: false),
+               "menu bar battery shows the percentage while discharging")
+        suite.expect(BatteryTimeSupport.showsMenuBarPercent(chargePercent: 85,
+                                                            isCharging: true,
+                                                            externalConnected: true),
+               "menu bar battery shows the percentage while charging")
+        suite.expect(!BatteryTimeSupport.showsMenuBarPercent(chargePercent: 100,
+                                                             isCharging: true,
+                                                             externalConnected: true),
+                     "menu bar battery hides the percentage at full charge")
+        suite.expect(!BatteryTimeSupport.showsMenuBarPercent(chargePercent: 100,
+                                                             isCharging: false,
+                                                             externalConnected: false),
+                     "menu bar battery hides the percentage at full charge on battery power")
+        suite.expect(!BatteryTimeSupport.showsMenuBarPercent(chargePercent: 80,
+                                                             isCharging: false,
+                                                             externalConnected: true),
+                     "menu bar battery hides the percentage while holding at a charge limit")
+        suite.expect(!BatteryTimeSupport.showsMenuBarPercent(chargePercent: nil,
+                                                             isCharging: false,
+                                                             externalConnected: false),
+                     "menu bar battery has no percentage without a charge reading")
+
+        // Production wiring: the battery block's visibility comes from the rule.
+        let rendererSource = (try? String(
+            contentsOfFile: "Sources/Vorssaint/App/MenuBarRenderer.swift",
+            encoding: .utf8)) ?? ""
+        suite.expect(rendererSource.contains("BatteryTimeSupport.showsMenuBarPercent"),
+                     "the menu bar battery block consults the percentage rule")
+
         suite.expect(MetricFormat.systemPowerWatts(measured: 3,
                                              batteryWatts: 10,
                                              externalConnected: true) == 3,

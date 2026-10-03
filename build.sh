@@ -325,6 +325,8 @@ if (( TEST )); then
         Sources/Vorssaint/Core/RecorderShareStrings.swift
         Sources/Vorssaint/Core/CameraPreviewStrings.swift
         Sources/Vorssaint/Core/CloseNotificationsStrings.swift
+        Sources/Vorssaint/Core/MonitorProcessListStrings.swift
+        Sources/Vorssaint/Services/SystemMonitor/ProcessBreakdownSupport.swift
         Sources/Vorssaint/Core/WallpaperStrings.swift
         Sources/Vorssaint/Services/Wallpaper/WallpaperSupport.swift
         Sources/Vorssaint/Core/ScratchpadStrings.swift

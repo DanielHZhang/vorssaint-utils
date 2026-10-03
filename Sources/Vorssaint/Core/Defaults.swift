@@ -396,6 +396,10 @@ enum DefaultsKey {
     static let menuBarDiskStyle = "menuBarDiskStyle"       // percent | free | used
     static let monitorMemoryMetric = "monitorMemoryMetric" // used | app
     static let monitorInterval = "monitorIntervalSeconds"  // sampling cadence: 1/2/5
+    // System monitor — the panel's per-process breakdowns list every process
+    // on its own instead of combining helpers under the app responsible for
+    // them, with no activity cutoffs (the looser, Stats-style listing).
+    static let monitorIndividualProcesses = "monitorIndividualProcesses"
     static let temperatureUnit = "temperatureUnit"          // celsius | fahrenheit
     // System monitor — which blocks appear in the panel.
     static let monitorShowSystem = "monitorShowSystem"
@@ -1550,6 +1554,7 @@ enum Defaults {
         DefaultsKey.menuBarMemoryStyle: "percent",
         DefaultsKey.menuBarDiskStyle: "percent",
         DefaultsKey.monitorMemoryMetric: "used",
+        DefaultsKey.monitorIndividualProcesses: false,
         DefaultsKey.monitorShowSystem: true,
         DefaultsKey.monitorShowNetwork: true,
         DefaultsKey.monitorShowDisk: true,

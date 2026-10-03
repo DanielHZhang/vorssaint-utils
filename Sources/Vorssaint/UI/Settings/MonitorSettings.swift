@@ -19,6 +19,7 @@ struct MonitorSettings: View {
     @AppStorage(DefaultsKey.menuBarMetricAppearance) private var metricAppearance = "values"
     @AppStorage(DefaultsKey.menuBarHideIconWithMetrics) private var hideIconWithMetrics = false
     @AppStorage(DefaultsKey.monitorInterval) private var interval = 2
+    @AppStorage(DefaultsKey.monitorIndividualProcesses) private var individualProcesses = false
     @AppStorage(DefaultsKey.temperatureUnit) private var temperatureUnit = TemperatureUnit.celsius.rawValue
     @AppStorage(DefaultsKey.monitorMemoryMetric) private var memoryMetric = "used"
     @AppStorage(DefaultsKey.panelShowFanControl) private var showFanControl = true
@@ -207,7 +208,21 @@ struct MonitorSettings: View {
             Text(l10n.s.monitorPanelConfigHint)
                 .font(.caption)
                 .foregroundStyle(.secondary)
+            Divider()
+            SettingsRow(symbol: "list.bullet.indent", title: processListStrings.title,
+                        caption: processListStrings.caption) {
+                Toggle(processListStrings.title, isOn: $individualProcesses).labelsHidden()
+            }
         }
+        .onChange(of: individualProcesses) { _, _ in
+            // Cached rows were built in the other presentation; drop them so
+            // the panel's next read matches the toggle instead of lagging it.
+            ProcessUsageService.shared.clearCachedRows()
+        }
+    }
+
+    private var processListStrings: MonitorProcessListStrings {
+        FeatureStrings.monitorProcessList(l10n.language)
     }
 
     private var fanControlCard: some View {

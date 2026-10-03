@@ -59,6 +59,10 @@ final class ProcessUsageService {
     private var networkLoading = false
     private var networkLeaseExpiresAt: TimeInterval = 0
     private var networkDeltaTracker = NetworkProcessDeltaTracker()
+    /// The looser per-process listing (Settings → Monitor): no helper
+    /// consolidation and no activity cutoffs. Read on every pass so flipping
+    /// the toggle takes effect on the next refresh, with no resync wiring.
+    private var listsIndividually: Bool { ProcessBreakdownPolicy.listsIndividually() }
     private let networkSamplerLock = NSLock()
     private var networkSamplerRunning = false
     private var networkSamplerGeneration = 0
@@ -66,6 +70,8 @@ final class ProcessUsageService {
     private init() {}
 
     func cachedTop(_ kind: BreakdownKind, limit: Int, maxAge: TimeInterval = 18) -> [ProcessUsage]? {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         let now = ProcessInfo.processInfo.systemUptime
         cacheLock.lock()
         defer { cacheLock.unlock() }
@@ -85,6 +91,8 @@ final class ProcessUsageService {
              sampleInterval: TimeInterval = 2,
              cpuPercentage: Double? = nil,
              gpuPercentage: Double? = nil) -> [ProcessUsage] {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         switch kind {
         case .cpu:
             return topCPU(limit: limit,
@@ -179,6 +187,8 @@ final class ProcessUsageService {
                    sampleInterval: TimeInterval = 2,
                    cpuPercentage: Double? = nil,
                    gpuPercentage: Double? = nil) -> [ProcessUsage] {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         let now = ProcessInfo.processInfo.systemUptime
         let freshness = max(0.5, sampleInterval * 0.8)
         cacheLock.lock()
@@ -211,7 +221,7 @@ final class ProcessUsageService {
         }
 
         let rows = scores
-            .filter { _, score in score.value >= 2 }
+            .filter { _, score in score.value >= ProcessBreakdownPolicy.energyThreshold(individual: listsIndividually) }
             .sorted { $0.value.value > $1.value.value }
             .map { pid, score in
                 ProcessUsage(pid: pid,
@@ -228,6 +238,8 @@ final class ProcessUsageService {
     // MARK: - Network
 
     func topNetwork(limit: Int = 5) -> [ProcessUsage] {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         let now = ProcessInfo.processInfo.systemUptime
         cacheLock.lock()
         let monitoring = networkMonitoringActive(now: now)
@@ -323,7 +335,15 @@ final class ProcessUsageService {
         }
         cacheLock.unlock()
 
-        let rows = groupedNetworkByApp(rateSamples)
+        let rows = listsIndividually
+            ? individualRows(rateSamples.map { sample in
+                ProcessUsage(pid: sample.pid,
+                             name: sample.name,
+                             value: sample.bytesIn + sample.bytesOut,
+                             networkDownBytesPerSec: sample.bytesIn,
+                             networkUpBytesPerSec: sample.bytesOut)
+            }.filter { $0.value > 0 }, limit: maximumCachedRows)
+            : groupedNetworkByApp(rateSamples)
 
         cacheLock.lock()
         if rows.isEmpty,
@@ -350,6 +370,8 @@ final class ProcessUsageService {
     func topCPU(limit: Int = 5,
                 sampleInterval: TimeInterval = 2,
                 aggregatePercentage: Double? = nil) -> [ProcessUsage] {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         let now = ProcessInfo.processInfo.systemUptime
         let minimumInterval = max(0.5, sampleInterval * 0.8)
 
@@ -390,10 +412,10 @@ final class ProcessUsageService {
                                                                 currentNanoseconds: total,
                                                                 elapsed: elapsed,
                                                                 processorCount: processorCount)
-            guard percentage >= 0.01 else { continue }
+            guard percentage >= ProcessBreakdownPolicy.cpuThreshold(individual: listsIndividually) else { continue }
             rows.append(ProcessUsage(pid: pid, name: "pid \(pid)", value: percentage))
         }
-        return finishCPU(reconciledUsageRows(groupedByApp(rows),
+        return finishCPU(reconciledUsageRows(presentedRows(rows, limit: limit),
                                              aggregatePercentage: aggregatePercentage),
                          limit: limit)
     }
@@ -435,6 +457,8 @@ final class ProcessUsageService {
     // MARK: - Memory
 
     func topMemory(limit: Int = 5) -> [ProcessUsage] {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         let now = ProcessInfo.processInfo.systemUptime
         cacheLock.lock()
         if let cached = limitedRows(memoryCache, limit: limit, now: now, maxAge: memoryCacheFreshSeconds) {
@@ -455,11 +479,13 @@ final class ProcessUsageService {
         // footprint, the same one Activity Monitor's Memory column uses —
         // rss counts shared and purgeable pages and over-reports (issue #174).
         let rows = result.status == 0
-            ? groupedByApp(parsePS(result.output, maxRows: rawProcessRowLimit(for: limit)) { (Double($0) ?? 0) * 1024 }
+            ? presentedRows(parsePS(result.output,
+                                    maxRows: ProcessBreakdownPolicy.memoryCandidateLimit(requested: limit,
+                                                                                         individual: listsIndividually)) { (Double($0) ?? 0) * 1024 }
                 .map { row in
                     guard let footprint = Self.physicalFootprint(of: row.pid) else { return row }
                     return ProcessUsage(pid: row.pid, name: row.name, value: footprint)
-                })
+                }, limit: limit)
             : nil
         return finishMemory(rows, limit: limit)
     }
@@ -494,10 +520,6 @@ final class ProcessUsageService {
         return rows
     }
 
-    private func rawProcessRowLimit(for limit: Int) -> Int {
-        max(limit * 10, 120)
-    }
-
     // MARK: - Consolidation
 
     /// Sums per-process values under each process's responsible app and keeps
@@ -522,6 +544,27 @@ final class ProcessUsageService {
                              name: ResponsibleProcess.displayName(pid: owner,
                                                                   fallback: fallbackNames[owner] ?? "pid \(owner)"),
                              value: value)
+            }
+    }
+
+    /// Rows as the panel shows them: combined under each responsible app
+    /// by default, or every process on its own in the looser listing.
+    private func presentedRows(_ rows: [ProcessUsage], limit: Int) -> [ProcessUsage] {
+        listsIndividually ? individualRows(rows, limit: limit) : groupedByApp(rows)
+    }
+
+    /// The looser listing: every process on its own, heaviest first. Names
+    /// resolve only for the rows that can actually show, so a full process
+    /// table does not pay a lookup per process on every refresh.
+    private func individualRows(_ rows: [ProcessUsage], limit: Int) -> [ProcessUsage] {
+        rows.sorted { $0.value > $1.value }
+            .prefix(limit)
+            .map { row in
+                ProcessUsage(pid: row.pid,
+                             name: ResponsibleProcess.displayName(pid: row.pid, fallback: row.name),
+                             value: row.value,
+                             networkDownBytesPerSec: row.networkDownBytesPerSec,
+                             networkUpBytesPerSec: row.networkUpBytesPerSec)
             }
     }
 
@@ -576,6 +619,8 @@ final class ProcessUsageService {
     func topGPU(limit: Int = 5,
                 sampleInterval: TimeInterval = 2,
                 aggregatePercentage: Double? = nil) -> [ProcessUsage] {
+        let limit = ProcessBreakdownPolicy.effectiveLimit(requested: limit,
+                                                          individual: listsIndividually)
         let now = ProcessInfo.processInfo.systemUptime
         let minimumInterval = max(0.5, sampleInterval * 0.8)
 
@@ -610,10 +655,10 @@ final class ProcessUsageService {
         for (pid, total) in current {
             guard let before = previous.perPid[pid], total > before else { continue }
             let percent = (total - before) / elapsedNs * 100
-            guard percent >= 0.05 else { continue }
+            guard percent >= ProcessBreakdownPolicy.gpuThreshold(individual: listsIndividually) else { continue }
             rows.append(ProcessUsage(pid: pid, name: "pid \(pid)", value: min(percent, 100)))
         }
-        let groupedRows = reconciledUsageRows(groupedByApp(rows),
+        let groupedRows = reconciledUsageRows(presentedRows(rows, limit: limit),
                                                aggregatePercentage: aggregatePercentage)
         return finishGPU(groupedRows, limit: limit)
     }
